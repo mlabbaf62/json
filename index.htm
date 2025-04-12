@@ -1,0 +1,286 @@
+﻿
+
+<script src="jquery.min.js"></script>
+<script src="angular.min.js"></script>
+<script src="app.js"></script>
+<div class="form-container3">Json To Form</div>
+
+<div class="form-container2" ng-app="myApp" ng-controller="myCtrl" id="myApp">
+ 
+    
+    <div class="wizard">
+
+        <ul class="tabs">
+            <li ng-repeat="tab in formData.tabs" class="tab" ng-class="{ 'active': $index === activeTabIndex }">
+                <a ng-click="setActiveTab($index)">{{ tab.label }}</a>
+            </li>
+        </ul>
+        <div style="clear:both" ng-if="formData" ng-repeat="tab in formData.tabs" class="tab-content" ng-class="{ 'active-tab': $index === activeTabIndex }">
+
+            <!--<div ng-repeat="field in tab.fields" class="form-control"  ng-style="{'width': field.MainWidth ,'float': field.MainWidth ? 'right' : 'none'}" >-->
+
+            <div ng-repeat="field in tab.fields" ng-style="{'width': field.MainWidth}">
+
+                <label style="float:right;clear:both;color:blue">{{ field.label }}</label>
+
+                <div ng-switch="field.type" style="clear:both; text-align:right">
+                    <hr ng-switch-when="hr" ng-style="{'width': field.width}" style="text-align:right">
+
+                    <input ng-switch-when="text" autocomplete="off" type="text" ng-model="field.value" ng-style="{'width': field.width}" ng-class="field.class" class="form-control col-md-4 col-xs-12">
+                    <select ng-switch-when="select" ng-model="field.value" ng-options="option for option in field.options" style="width:200px" class="form-control"></select>
+                    <div ng-switch-when="radio" class="BorderRadio">
+                        <label ng-repeat="option in field.options" class="lableRadio">
+                            <input type="radio" ng-model="field.value" ng-value="option"> {{ option }}
+                        </label>
+                    </div>
+                    <div ng-switch-when="grid">
+                        <div class="table-container">
+                            <button class="btn btn-primary add-btn" style="float:left" ng-hide="field.NoAdd" ng-click="addRow(field)">
+                                <i class="fas fa-plus"></i> اضافه کردن
+                            </button>
+
+                            <table class="custom-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: calc(100% / {{Object.keys(field.NewRow).length}}) " ng-show="key!='editing'" ng-repeat="(key, value) in field.NewRow">{{ key }}</th>
+                                        <th style="width:150px" class="actions-column"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="item in field.items">
+                                        <td ng-show="key!='editing' && key!='NoEdit'" ng-repeat="(key, value) in item">
+
+                                            <span ng-hide="item.editing">{{ value }}</span>
+                                            <input autocomplete="off" ng-show="item.editing" ng-readonly="field.ReadOnly && $index === 0" type="text" ng-model="item[key]" style="width:90%" />
+                                        </td>
+                                        <td style="width:160px">
+
+                                            <button class="btn btn-xs btn-success" ng-show="!item.editing && !item.NoEdit && !field.NoEdit" ng-click="editCell(item)">ویرایش</button>
+                                            <button class="btn btn-xs btn-danger" ng-click="deleteRow(field, $index)" ng-hide="field.NoDelete ">
+                                                <i class="fas fa-trash-alt"></i> حذف
+                                            </button>
+
+                                            <button class="btn btn-xs btn" style="background-color: #b0b0f3" ng-show="item.editing" ng-click="updateCell(item)">ذخیره</button>
+
+                                        </td>
+                                </tbody>
+                            </table>
+
+                        </div>
+                    </div>
+                </div>
+
+                <hr ng-show="field.type=='radio' || field.type=='grid'" />
+            </div>
+        </div>
+    </div>
+    <div class="button-container">
+        <button class="btn btn-success" ng-click="prevTab()" ng-disabled="activeTabIndex === 0">قبلی</button>
+        <button class="btn btn-success" ng-click="nextTab()" ng-disabled="activeTabIndex === formData.tabs.length - 1">بعدی</button>
+        <button class="btn btn-success" ng-click="generateJson()">ذخیره فرم</button>
+        <span ng-bind="LMessage" id="messageSpan"> </span>
+    </div>
+</div>
+
+
+<style>
+    hr {
+        height: 10px;
+        border: 0;
+        box-shadow: 0 10px 10px -10px #333 inset;
+    }
+
+    @font-face {
+        font-family: 'Yekan';
+        src: url('fonts/web_Yekan.woff') format('woff');
+        font-weight: normal;
+        font-style: normal;
+    }
+
+    body {
+        font-family: Yekan;
+    }
+
+    .form-container2 {
+        margin-top: 10px !important;
+        width: 80%;
+        margin: 0 auto;
+        border: 1px solid #ccc;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border-radius: 10px;
+    }
+    .form-container3 {
+        margin-top: 10px !important;
+        width: 80%;
+        margin: 0 auto;
+    }
+    .wizard {
+        position: relative;
+        width: 100%;
+    }
+
+    .tabs {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+        overflow: hidden;
+        background-color: #f2f2f2;
+        border-radius: 5px;
+        float: right;
+        direction: rtl;
+    }
+
+    .tab {
+        float: right;
+    }
+
+        .tab a {
+            display: block;
+            color: #333;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+            .tab a:hover {
+                background-color: #ddd;
+            }
+
+        .tab.active a {
+            background-color: #ccc;
+        }
+
+    .tab-content {
+        display: none;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: #fff;
+        margin-bottom: 20px;
+    }
+
+        .tab-content.active-tab {
+            display: block;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+    .form-control {
+        margin-bottom: 15px;
+    }
+
+    .button-container {
+        margin-top: 20px;
+        text-align: right;
+    }
+
+    button {
+        font-family: 'B Yekan',Tahoma;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    .table-container {
+        max-width: 100%;
+        margin: 0 auto;
+        overflow-x: auto;
+    }
+
+        .table-container .add-btn {
+            margin-bottom: 10px;
+        }
+
+        .table-container table th,
+        .table-container table td {
+            vertical-align: middle;
+            text-align: center;
+        }
+
+        .table-container table th {
+            background-color: #f2f2f2;
+        }
+
+        .table-container table .actions-column {
+            width: 100px;
+        }
+
+    .edit-mode input {
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 5px;
+    }
+
+    .edit-mode button {
+        margin-top: 5px;
+    }
+
+    input[type=text] {
+        padding: 7px;
+        font-family: Tahoma;
+        border: solid silver 1px;
+        border-radius: 3px;
+        margin-top: 5px;
+    }
+
+    select {
+        padding: 5px;
+        font-family: Tahoma;
+    }
+
+    label.HeaderLable {
+        margin-bottom: 5px;
+        margin-right: 15px;
+    }
+
+        label.HeaderLable::before {
+            content: "|";
+            color: red;
+            font-weight: bold;
+            position: absolute;
+            margin-right: -5px;
+            font-size: 25px;
+        }
+
+    .BorderRadio {
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid silver;
+        display: grid;
+        background: #f3f3f3
+    }
+
+    .lableRadio {
+        padding-bottom: 10px
+    }
+
+
+
+    .custom-table {
+        border-collapse: collapse;
+        width: 100%;
+        border: 1px solid #ddd;
+    }
+
+        .custom-table th, .custom-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .custom-table th {
+            background-color: #f2f2f2;
+        }
+
+        .custom-table .actions-column {
+            width: 150px;
+        }
+</style>
